@@ -1,7 +1,6 @@
 #!/usr/bin/python3.6
 
-"""
-pusoy_dos.py
+"""pusoy_dos.py
 
 Pusoy Dos or Filipino Poker
 """
@@ -101,12 +100,14 @@ class Deck:
 
 
 class Player:
-    upper_hand = None
 
     def __init__(self, name):
         self.name = name
         self.hand = []
         self.Combination = namedtuple('Combination', ['combotype', 'cards'])
+
+    def __eq__(self, other):
+        return self.name == other.name
 
     def __repr__(self):
         return f'Player({self.name}, cards_at_hand: {len(self.hand)})'
@@ -310,7 +311,7 @@ if __name__ == '__main__':
                     if discard_pile[-1].combotype == 'Single':
                         print('Singles combination battle.')
                         if picked_cards[0] > discard_pile[-1].cards[0]:
-                            Player.upper_hand = player
+                            pass
                     # elif discard_pile[-1][0] == 'Pair':
                     #     print('Pairs combination battle.')
                     # elif discard_pile[-1][0] == 'Three of a kind':
@@ -319,6 +320,17 @@ if __name__ == '__main__':
                     #     print('Five-card hand combination battle.')
                 discard_pile.append(player.discard(combotype, picked_cards))
                 pprint(discard_pile)
-                player.show_hand()
+                # player.show_hand()
             else:
                 print('No valid combination found. Try again.')
+
+
+
+# Todo:
+# 1. Create a custom list that list all players.
+# 2. List is capable of searching for specific player.
+# 3. From that player, we'll provide a next() feature so it will look
+# like it is passing a turn.
+# 4. Players in list are connected in adjacent order
+# 5. If last player reached, iteration goes back at the beginning of list(called cycle)
+# 6. Iteration continuous until someone is declared a winner. (a bit wrong)
