@@ -85,7 +85,7 @@ class Deck:
         for i in range(len(self._cards)-1, 0, -1):
             r = math.floor(random() * (i+1))
             self._cards[i], self._cards[r] = self._cards[r], self._cards[i]
-        # Or random.shuffle()
+        # Or just the standard random.shuffle()
 
     def _show_cards(self):
         for card in self._cards:
@@ -187,7 +187,7 @@ def is_straight(cards):
     if 13 in card_values and 1 in card_values:
         card_values = card_values[1:] + card_values[:1]
 
-    # Casting elements to str then join then check if card_values in sequence
+    # Casting elements to str then join to a single string then check if card_values in sequence
     # of numbers for possible straight combination.
     card_values = ''.join(map(str, card_values))
     sequence = ''.join(map(str, list(range(1, 14)) + [1]))
@@ -323,14 +323,3 @@ if __name__ == '__main__':
                 # player.show_hand()
             else:
                 print('No valid combination found. Try again.')
-
-
-
-# Todo:
-# 1. Create a custom list that list all players.
-# 2. List is capable of searching for specific player.
-# 3. From that player, we'll provide a next() feature so it will look
-# like it is passing a turn.
-# 4. Players in list are connected in adjacent order
-# 5. If last player reached, iteration goes back at the beginning of list(called cycle)
-# 6. Iteration continuous until someone is declared a winner. (a bit wrong)

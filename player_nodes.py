@@ -1,5 +1,6 @@
 """ player_nodes.py
 
+Data structure for listing players.
 """
 
 
@@ -22,10 +23,13 @@ class Node:
         self.next = new_next
 
     def __repr__(self):
-        return f'Node(data={self.data}, next={self.next.data})'
+        return f'Node(data={self.data}, next=Node({self.next.data}))'
 
 
 class ActivePlayer:
+    """ A class for managing list of players in a continuous cycle
+        or until winner has been decided.
+    """
 
     def __init__(self, *players):
         self.head = None
@@ -38,11 +42,16 @@ class ActivePlayer:
             node = Node(player)
             if self.tail:
                 self.tail.set_next(node)
-                self.tail = node
             else:
                 self.head = node
-                self.tail = node
+            self.tail = node
         self.tail.set_next(self.head)
+
+    def add(self, player):
+        node = Node(player)
+        self.tail.set_next(node)
+        node.set_next(self.head)
+        self.tail = node
 
     def next_turn(self):
         if self.turn:
@@ -53,7 +62,8 @@ class ActivePlayer:
 
     def upper_hand(self, player):
         self.turn = self.search(player)
-        print(f'Advantage: {self.turn.get_data()}')
+        print(f'Advantage: {self.turn.get_data().name}')
+        return self.turn.get_data()
 
     def search(self, player):
         current = self.head
@@ -83,11 +93,25 @@ class ActivePlayer:
                 self.tail = previous
             previous.set_next(current.get_next())
 
-    def show_head(self):
+    def size(self):
+        current = self.head
+        count = 1 if current else 0
+        while current and current != self.tail:
+            current = current.get_next()
+            count += 1
+        return count
+
+    def _show_head(self):
         print(self.head)
 
-    def show_tail(self):
+    def _show_tail(self):
         print(self.tail)
+
+    def show_players(self):
+        current = self.head
+        for i in range(self.size()):
+            print(f'Player {i+1}: {current.get_data().name}')
+            current = current.get_next()
 
 
 if __name__ == '__main__':
@@ -104,18 +128,18 @@ if __name__ == '__main__':
     jane = Player('Jane')
     jess = Player('Jess')
     june = Player('June')
+    jack = Player('Jack')
 
-    player_list = ActivePlayer(john,jane,jess,june)
-    player_list.upper_hand(june)
-    player_list.remove(june)
-    print(player_list.next_turn())
-    print(player_list.next_turn())
-    print(player_list.next_turn())
-    print(player_list.next_turn())
-    print(player_list.next_turn())
-    print(player_list.next_turn())
-    player_list.show_head()
-
-
-    # Extra todo:
-    # Difference between __str__ and __repr__
+    player_list = ActivePlayer(john, jane, jess, june)
+    # player_list.upper_hand(june)
+    # player_list.remove(june)
+    # print(player_list.next_turn())
+    # print(player_list.next_turn())
+    # print(player_list.next_turn())
+    # print(player_list.next_turn())
+    # print(player_list.next_turn())
+    # print(player_list.next_turn())
+    # player_list.show_head()
+    # print(player_list.size())
+    player_list.add(jack)
+    player_list.show_players()
