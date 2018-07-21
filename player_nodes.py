@@ -23,7 +23,7 @@ class Node:
         self.next = new_next
 
     def __repr__(self):
-        return f'Node(data={self.data}, next=Node({self.next.data}))'
+        return f'Node({self.data})'
 
 
 class ActivePlayer:
@@ -32,32 +32,35 @@ class ActivePlayer:
     """
 
     def __init__(self, *players):
-        self.head = None
-        self.tail = None
+        self.first = None
+        self.last = None
         self.turn = None
         self.set(*players)
+
+    # def __iter__(self):
+    #     return iter(self.next_turn())
 
     def set(self, *players):
         for player in players:
             node = Node(player)
-            if self.tail:
-                self.tail.set_next(node)
+            if self.last:
+                self.last.set_next(node)
             else:
-                self.head = node
-            self.tail = node
-        self.tail.set_next(self.head)
+                self.first = node
+            self.last = node
+        self.last.set_next(self.first)
 
     def add(self, player):
         node = Node(player)
-        self.tail.set_next(node)
-        node.set_next(self.head)
-        self.tail = node
+        self.last.set_next(node)
+        node.set_next(self.first)
+        self.last = node
 
     def next_turn(self):
         if self.turn:
             self.turn = self.turn.get_next()
         else:
-            self.turn = self.head
+            self.turn = self.first
         return self.turn.get_data()
 
     def upper_hand(self, player):
@@ -66,7 +69,7 @@ class ActivePlayer:
         return self.turn.get_data()
 
     def search(self, player):
-        current = self.head
+        current = self.first
         found = False
         while not found:
             if current.get_data() == player:
@@ -76,7 +79,7 @@ class ActivePlayer:
         return current
 
     def remove(self, player):
-        current = self.head
+        current = self.first
         previous = None
         found = False
         while not found:
@@ -86,29 +89,29 @@ class ActivePlayer:
                 previous = current
                 current = current.get_next()
         if not previous:
-            self.head = current.get_next()
-            self.tail.set_next(self.head)
+            self.first = current.get_next()
+            self.last.set_next(self.first)
         else:
-            if self.tail == current:
-                self.tail = previous
+            if self.last == current:
+                self.last = previous
             previous.set_next(current.get_next())
 
     def size(self):
-        current = self.head
+        current = self.first
         count = 1 if current else 0
-        while current and current != self.tail:
+        while current and current != self.last:
             current = current.get_next()
             count += 1
         return count
 
-    def _show_head(self):
-        print(self.head)
+    def _show_first(self):
+        print(self.first)
 
-    def _show_tail(self):
-        print(self.tail)
+    def _show_last(self):
+        print(self.last)
 
     def show_players(self):
-        current = self.head
+        current = self.first
         for i in range(self.size()):
             print(f'Player {i+1}: {current.get_data().name}')
             current = current.get_next()
@@ -139,7 +142,7 @@ if __name__ == '__main__':
     # print(player_list.next_turn())
     # print(player_list.next_turn())
     # print(player_list.next_turn())
-    # player_list.show_head()
+    # player_list.show_first()
     # print(player_list.size())
     player_list.add(jack)
     player_list.show_players()
