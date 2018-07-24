@@ -13,6 +13,8 @@ from pprint import pprint
 
 from colorama import Fore, Back
 
+from player_nodes import ActivePlayer
+
 Suit = namedtuple('Suit', ['name', 'rank', 'uni'])
 diamonds = Suit('Diamonds', 1, b'\xE2\x99\xA6'.decode())
 hearts = Suit('Hearts', 2, b'\xE2\x99\xA5'.decode())
@@ -23,7 +25,7 @@ SUITS = {'Diamonds': diamonds,
          'Hearts': hearts,
          'Spades': spades,
          'Clubs': clubs}
-ROYALS = {'11': 'Jack', '12': 'Queen', '13': 'King', '1': 'Ace'}
+HONOURS = {'11': 'Jack', '12': 'Queen', '13': 'King', '1': 'Ace'}
 
 discard_pile = []
 
@@ -35,7 +37,7 @@ class Card:
         self.value = value
 
     def __repr__(self):
-        return f'Card({self.suit}, {self.value})'
+        return f'{self.__class__.__name__}({self.suit!r}, {self.value!r})'
 
     def __str__(self):
         return f'{self.value} of {self.suit}'
@@ -43,23 +45,23 @@ class Card:
     # Part which is quite confusing as without this method the class Player's discard method
     # won't return the result as expected.
     def __eq__(self, other):
-        # print(f'{str(self):<17} -------------------------- {other}')
-        return self.suit == other.suit and self.value == other.value
+        return self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not self.__dict__ == other.__dict__
 
     # Reverse comparison of greater than and less than so comparison of card suits match
     # the order of suit ranking where 1 would be the highest.
     # Card values ranking(highest to lowest): 2-A-K-Q-J-10-9...3
     def __gt__(self, other):
-        print(f'{self} is greater than {other} in terms of suit.')
-        card_value_ranks = map(str, list(range(3, 14)) + [1, 2])
-        card_ranks = [(ROYALS.get(value) or value) for value in card_value_ranks]
-        print(card_ranks)
+        # numerals = map(str, list(range(3, 14)) + [1, 2])
+        # card_ranks = [(HONOURS.get(value) or value) for value in numerals]
+        card_ranks = ['3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace', '2']
         if self.value == other.value:
             return SUITS[self.suit].rank < SUITS[other.suit].rank  ## Test
-
         return card_ranks.index(self.value) > card_ranks.index(other.value)
 
-    def show(self):
+    def show(self, end='\n'):
         if self.suit in ['Diamonds', 'Hearts']:
             print(f'{Fore.RED}{SUITS[self.suit].uni} {Fore.RESET}{self.value}')
         else:
@@ -78,7 +80,7 @@ class Deck:
     def build(self):
         for suit in SUITS:
             for value in range(1, 14):
-                self._cards.append(Card(suit, ROYALS.get(str(value)) or str(value)))
+                self._cards.append(Card(suit, HONOURS.get(str(value)) or str(value)))
 
     def shuffle(self):
         # Using Fisher-Yates modern shuffle algorithm
@@ -100,17 +102,17 @@ class Deck:
 
 
 class Player:
+    Combination = namedtuple('Combination', ['combotype', 'cards'])
 
     def __init__(self, name):
         self.name = name
         self.hand = []
-        self.Combination = namedtuple('Combination', ['combotype', 'cards'])
 
     def __eq__(self, other):
         return self.name == other.name
 
     def __repr__(self):
-        return f'Player({self.name}, cards_at_hand: {len(self.hand)})'
+        return f'{self.__class__.__name__}({self.name!r})'
 
     def draw(self, deck):
         if deck.not_empty():
@@ -118,10 +120,11 @@ class Player:
 
     def show_hand(self):
         for i, card in enumerate(self.hand):
-            print(f'{i+1:<2}', end=' ')
+            #print(f'{i+1:<2}', end=' ')
             card.show()
 
     def discard(self, combotype, cards):
+        cards.sort(key=card_func_key)
         for card in cards:
             self.hand.pop(self.hand.index(card))
         return self.Combination(combotype, cards)
@@ -131,15 +134,18 @@ class Player:
 
 
 # Sorting key for cards:
-# Sort cards by their value then cast them to int. If card is a royal ('Jack', 'Queen', 'King')
-# convert them to their corresponding numbers ('11', '12', '13') respectively.
+# Sort cards by their (value, suit).
+#   If card value is one of the honours ('Jack', 'Queen', 'King', 'Ace')
+#   replace them to their corresponding numbers ('11', '12', '13', '1') respectively.
+#   then cast them to int.
+#   Suits are also replace by their int representation(rank)
 def card_func_key(card):
-    royals_reversed = reverse_key_value(ROYALS)
-    # return int(royals_reversed.get(card.value)) if not card.value.isdigit() else int(card.value)
-    return int(card.value if card.value.isdigit() else royals_reversed.get(card.value))
+    HONOURS_reversed = reverse_key_value(HONOURS)
+    return (int(card.value if card.value.isdigit() else HONOURS_reversed.get(card.value)),
+            -int(SUITS[card.suit].rank))
 
 
-# Change the dictionary's key to value and value to key.
+# Helper function that change the dictionary's key to value and value to key.
 def reverse_key_value(dictionary):
     new_dict = {}
     for key, value in dictionary.items():
@@ -181,17 +187,17 @@ def is_three_of_a_kind(cards):
 
 
 def is_straight(cards):
-    card_values = sorted(map(card_func_key, cards))  # Cast card values to int then sort
-
-    # If cards contain a King and an Ace place the Ace at the end of card_values
-    if 13 in card_values and 1 in card_values:
+    cards.sort(key=card_func_key)
+    card_values = list(map(lambda c: c.value, cards))
+    # If cards contains both King and Ace place the Ace at the end of card_values
+    if 'King' in card_values and 'Ace' in card_values:
         card_values = card_values[1:] + card_values[:1]
-
-    # Casting elements to str then join to a single string then check if card_values in sequence
-    # of numbers for possible straight combination.
-    card_values = ''.join(map(str, card_values))
-    sequence = ''.join(map(str, list(range(1, 14)) + [1]))
-    return card_values in sequence
+    print(card_values)
+    possible_straight = ['Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
+    for i in range( len(possible_straight)-4 ):
+        if card_values == possible_straight[i:i+5]:
+            return True
+    return False
 
 
 def is_flush(cards):
@@ -216,6 +222,14 @@ def is_straight_flush(cards):
     return is_straight(cards) and is_flush(cards)
 
 
+def is_highest(current, former):
+    if current.combotype == former.combotype:
+        return current.cards[-1] > former.cards[-1]
+    else:
+        print('Invalid type of combination played.')
+        return False
+
+
 if __name__ == '__main__':
     # Pusoy dos (Filipino Poker)
     # Rules:
@@ -238,13 +252,16 @@ if __name__ == '__main__':
     jess = Player('Jess')
     june = Player('June')
 
-    players = [john, jane, jess, june]
+    # players = [john, jane, jess, june]
+    players = ActivePlayer(john, jane, jess, june)
 
-    # Distribute card to each player
+    # Distribute card for each player
     while deck.not_empty():
-        for player in players:
-            player.draw(deck)
+        players.next_turn().draw(deck)
 
+    player = players.next_turn()
+    print(player.name)
+    player.show_hand()
     # for player in players:
     #     print(f"{player}")
     #     player.show_hand()
@@ -253,12 +270,25 @@ if __name__ == '__main__':
     # june.sort_hand()
 
     # Sample cards to test ranking of card combinations
-    # card1 = Card('Hearts', '2')
-    # sample_cards = [
-    #     card1
-    # ]
+    card1 = Card('Hearts', '2')
+    card2 = Card('Spades', '2')
+    sample_cards1 = [
+        card1
+    ]
     # valid, combotype = verify_combination(sample_cards)
     # discard_pile.append(june.discard(combotype, sample_cards))
+
+    card3 = Card('Diamonds', '2')
+    card4 = Card('Clubs', '2')
+    sample_cards2 = [
+        card4
+    ]
+
+    pair1 = Player.Combination('Pair', sample_cards1)
+    pair2 = Player.Combination('Single', sample_cards2)
+    # print(pair1 == pair2)
+    # print(sample_cards1 == sample_cards2)
+    print(is_highest(pair1, pair2))
 
     # june.show_hand()
 
@@ -268,58 +298,58 @@ if __name__ == '__main__':
     # valid, combotype = verify_combination(my_discard)
     # print(card2 > card1)
 
-    while True:
-        for player in players:
-            print(f"{player.name}'s turn.")
-            player.sort_hand()
-            player.show_hand()
+    # while True:
+    #     for player in players:
+    #         print(f"{player.name}'s turn.")
+    #         player.sort_hand()
+    #         player.show_hand()
 
-            picked_cards = []
-            while True and len(picked_cards) < 5:
+    #         picked_cards = []
+    #         while True and len(picked_cards) < 5:
 
-                # try:
-                    picked_card = input('Choose card to form a combination:(<suit> <value>): ').title()
-                    if not picked_card:
-                        continue
+    #             # try:
+    #                 picked_card = input('Choose card to form a combination:(<suit> <value>): ').title()
+    #                 if not picked_card:
+    #                     continue
 
-                    # Optional exit status for faster bug fixing.
-                    if picked_card == 'Quit' or picked_card == 'Q':
-                        sys.exit()
-                    elif picked_card == 'Done' or picked_card == 'D':
-                        break
+    #                 # Optional exit status for faster bug fixing.
+    #                 if picked_card == 'Quit' or picked_card == 'Q':
+    #                     sys.exit()
+    #                 elif picked_card == 'Done' or picked_card == 'D':
+    #                     break
 
-                    suit, value = picked_card.split()
+    #                 suit, value = picked_card.split()
 
-                    if suit not in SUITS or \
-                            value not in (list(map(str, range(1, 11))) + list(ROYALS.values())):
-                        print(f"Wrong input.")
-                        continue
+    #                 if suit not in SUITS or \
+    #                         value not in (list(map(str, range(1, 11))) + list(HONOURS.values())):
+    #                     print(f"Wrong input.")
+    #                     continue
 
-                    card = Card(suit, value)
-                    if card not in player.hand:
-                        print(f"You don't have the card, {card}")
-                    elif card in picked_cards:
-                        print(f'{card} is already picked. Choose another one.')
-                    else:
-                        picked_cards.append(card)
-                # except:
-                #     print('Invalid input format.')
+    #                 card = Card(suit, value)
+    #                 if card not in player.hand:
+    #                     print(f"You don't have the card, {card}")
+    #                 elif card in picked_cards:
+    #                     print(f'{card} is already picked. Choose another one.')
+    #                 else:
+    #                     picked_cards.append(card)
+    #             # except:
+    #             #     print('Invalid input format.')
 
-            valid, combotype = verify_combination(picked_cards)
-            if valid:
-                if discard_pile:
-                    if discard_pile[-1].combotype == 'Single':
-                        print('Singles combination battle.')
-                        if picked_cards[0] > discard_pile[-1].cards[0]:
-                            pass
-                    # elif discard_pile[-1][0] == 'Pair':
-                    #     print('Pairs combination battle.')
-                    # elif discard_pile[-1][0] == 'Three of a kind':
-                    #     print('Three of a kind combination battle.')
-                    # else:
-                    #     print('Five-card hand combination battle.')
-                discard_pile.append(player.discard(combotype, picked_cards))
-                pprint(discard_pile)
-                # player.show_hand()
-            else:
-                print('No valid combination found. Try again.')
+    #         valid, combotype = verify_combination(picked_cards)
+    #         if valid:
+    #             if discard_pile:
+    #                 if discard_pile[-1].combotype == 'Single':
+    #                     print('Singles combination battle.')
+    #                     if picked_cards[0] > discard_pile[-1].cards[0]:
+    #                         pass
+    #                 # elif discard_pile[-1][0] == 'Pair':
+    #                 #     print('Pairs combination battle.')
+    #                 # elif discard_pile[-1][0] == 'Three of a kind':
+    #                 #     print('Three of a kind combination battle.')
+    #                 # else:
+    #                 #     print('Five-card hand combination battle.')
+    #             discard_pile.append(player.discard(combotype, picked_cards))
+    #             pprint(discard_pile)
+    #             # player.show_hand()
+    #         else:
+    #             print('No valid combination found. Try again.')
