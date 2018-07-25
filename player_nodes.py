@@ -23,7 +23,7 @@ class Node:
         self.next = new_next
 
     def __repr__(self):
-        return f'Node({self.data})'
+        return f'{self.__class__.__name__}({self.data!r})'
 
 
 class ActivePlayer:
@@ -35,26 +35,46 @@ class ActivePlayer:
         self.first = None
         self.last = None
         self.turn = None
+        self.size = 0
         self.set(*players)
+
+    def __repr__(self):
+        current = self.first
+        player_objs = []
+        for i in range(self.size()):
+            player_objs.append(current.get_data())
+            current = current.get_next()
+        return f"{self.__class__.__name__}({', '.join(map(str, player_objs))})"
+
+    def __str__(self):
+        current = self.first
+        _players = []
+        for i in range(self.size):
+            _players.append(f'Player {i+1}: {current.get_data().name}')
+            current = current.get_next()
+        return '\n'.join(_players)
 
     # def __iter__(self):
     #     return iter(self.next_turn())
 
     def set(self, *players):
-        for player in players:
-            node = Node(player)
-            if self.last:
-                self.last.set_next(node)
-            else:
-                self.first = node
-            self.last = node
-        self.last.set_next(self.first)
+        if players:
+            for player in players:
+                node = Node(player)
+                if self.last:
+                    self.last.set_next(node)
+                else:
+                    self.first = node
+                self.last = node
+                self.size += 1
+            self.last.set_next(self.first)
 
     def add(self, player):
         node = Node(player)
         self.last.set_next(node)
         node.set_next(self.first)
         self.last = node
+        self.size += 1
 
     def next_turn(self):
         if self.turn:
@@ -69,6 +89,7 @@ class ActivePlayer:
         return self.turn.get_data()
 
     def search(self, player):
+        # Test the correctness of method
         current = self.first
         found = False
         while not found:
@@ -79,6 +100,8 @@ class ActivePlayer:
         return current
 
     def remove(self, player):
+        # Somehow needs to return a value indicating that a value has been
+        # removed
         current = self.first
         previous = None
         found = False
@@ -96,25 +119,14 @@ class ActivePlayer:
                 self.last = previous
             previous.set_next(current.get_next())
 
-    def size(self):
-        current = self.first
-        count = 1 if current else 0
-        while current and current != self.last:
-            current = current.get_next()
-            count += 1
-        return count
+    def get_size(self):
+        return self.size
 
     def _show_first(self):
         print(self.first)
 
     def _show_last(self):
         print(self.last)
-
-    def show_players(self):
-        current = self.first
-        for i in range(self.size()):
-            print(f'Player {i+1}: {current.get_data().name}')
-            current = current.get_next()
 
 
 if __name__ == '__main__':
@@ -145,4 +157,6 @@ if __name__ == '__main__':
     # player_list.show_first()
     # print(player_list.size())
     player_list.add(jack)
-    player_list.show_players()
+    # player_list.show_players()
+    print(player_list)
+    print(player_list.get_size())
