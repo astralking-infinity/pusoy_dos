@@ -9,6 +9,7 @@ import math
 import sys
 from random import random
 from collections import namedtuple
+from functools import partial
 from pprint import pprint
 
 from colorama import Fore, Back
@@ -134,12 +135,15 @@ class Player:
 
 
 # Sorting key for cards:
-#   Values are converted to numerical equivalent
-#   Suits are also replace by their int representation(rank)
-#   Sort cards by their value then suit.
-def card_func_key(card):
-    return (int(card.value if card.value.isdigit() else HONOURS.get(card.value)),
-            -int(SUITS[card.suit].rank))
+#   Values are converted to numerical equivalent by default
+#   Sort cards by their value(by numerical or by rank) then suit rank.
+def card_func_key(card, valueby='numerical'):
+    if valueby == 'rank':
+        return (CARD_RANKS.index(card.value), -(SUITS[card.suit].rank))
+    return (
+        int(card.value if card.value.isdigit() else HONOURS.get(card.value)),
+        -(SUITS[card.suit].rank)
+    )
 
 
 # Check if cards' combination is valid
@@ -210,11 +214,13 @@ def is_straight_flush(cards):
     return is_straight(cards) and is_flush(cards)
 
 
+# Defining rules for comparing types of card combinations.
 def is_highest(current, former):
     if current.combotype == former.combotype:
-        if former.combotype == 'Flush':
+        if former.combotype in ('Single', 'Pair', 'Three of a kind'):
+            return current.cards[-1] > former.cards[-1]
+        elif former.combotype == 'Flush':
             pass
-        return current.cards[-1] > former.cards[-1]
     else:
         print('Invalid type of combination played.')
         return False
