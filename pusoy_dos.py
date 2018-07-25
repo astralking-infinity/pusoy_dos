@@ -25,7 +25,9 @@ SUITS = {'Diamonds': diamonds,
          'Hearts': hearts,
          'Spades': spades,
          'Clubs': clubs}
-HONOURS = {'11': 'Jack', '12': 'Queen', '13': 'King', '1': 'Ace'}
+HONOURS = {'Jack': '11', 'Queen': '12', 'King': '13', 'Ace': '1'}
+
+CARD_RANKS = ('3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace', '2')
 
 discard_pile = []
 
@@ -54,12 +56,9 @@ class Card:
     # the order of suit ranking where 1 would be the highest.
     # Card values ranking(highest to lowest): 2-A-K-Q-J-10-9...3
     def __gt__(self, other):
-        # numerals = map(str, list(range(3, 14)) + [1, 2])
-        # card_ranks = [(HONOURS.get(value) or value) for value in numerals]
-        card_ranks = ['3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace', '2']
         if self.value == other.value:
             return SUITS[self.suit].rank < SUITS[other.suit].rank  ## Test
-        return card_ranks.index(self.value) > card_ranks.index(other.value)
+        return CARD_RANKS.index(self.value) > CARD_RANKS.index(other.value)
 
     def show(self, end='\n'):
         if self.suit in ['Diamonds', 'Hearts']:
@@ -79,8 +78,9 @@ class Deck:
 
     def build(self):
         for suit in SUITS:
-            for value in range(1, 14):
-                self._cards.append(Card(suit, HONOURS.get(str(value)) or str(value)))
+            for value in CARD_RANKS:
+                self._cards.append(Card(suit, value))
+        self._cards.sort(key=card_func_key)
 
     def shuffle(self):
         # Using Fisher-Yates modern shuffle algorithm
@@ -134,23 +134,12 @@ class Player:
 
 
 # Sorting key for cards:
-# Sort cards by their (value, suit).
-#   If card value is one of the honours ('Jack', 'Queen', 'King', 'Ace')
-#   replace them to their corresponding numbers ('11', '12', '13', '1') respectively.
-#   then cast them to int.
+#   Values are converted to numerical equivalent
 #   Suits are also replace by their int representation(rank)
+#   Sort cards by their value then suit.
 def card_func_key(card):
-    HONOURS_reversed = reverse_key_value(HONOURS)
-    return (int(card.value if card.value.isdigit() else HONOURS_reversed.get(card.value)),
+    return (int(card.value if card.value.isdigit() else HONOURS.get(card.value)),
             -int(SUITS[card.suit].rank))
-
-
-# Helper function that change the dictionary's key to value and value to key.
-def reverse_key_value(dictionary):
-    new_dict = {}
-    for key, value in dictionary.items():
-        new_dict[value] = key
-    return new_dict
 
 
 # Check if cards' combination is valid
@@ -192,7 +181,6 @@ def is_straight(cards):
     # If cards contains both King and Ace place the Ace at the end of card_values
     if 'King' in card_values and 'Ace' in card_values:
         card_values = card_values[1:] + card_values[:1]
-    print(card_values)
     possible_straight = ['Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
     for i in range( len(possible_straight)-4 ):
         if card_values == possible_straight[i:i+5]:
@@ -224,6 +212,8 @@ def is_straight_flush(cards):
 
 def is_highest(current, former):
     if current.combotype == former.combotype:
+        if former.combotype == 'Flush':
+            pass
         return current.cards[-1] > former.cards[-1]
     else:
         print('Invalid type of combination played.')
