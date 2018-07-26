@@ -22,15 +22,15 @@ hearts = Suit('Hearts', 2, b'\xE2\x99\xA5'.decode())
 spades = Suit('Spades', 3, b'\xE2\x99\xA0'.decode())
 clubs = Suit('Clubs', 4, b'\xE2\x99\xA3'.decode())
 
-SUITS = {'Diamonds': diamonds,
+SUIT = {'Diamonds': diamonds,
          'Hearts': hearts,
          'Spades': spades,
          'Clubs': clubs}
-HONOURS = {'Jack': '11', 'Queen': '12', 'King': '13', 'Ace': '1'}
 
 CARD_RANKS = ('3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace', '2')
 
-discard_pile = []
+discards = []
+plays = []
 
 
 class Card:
@@ -45,8 +45,6 @@ class Card:
     def __str__(self):
         return f'{self.value} of {self.suit}'
 
-    # Part which is quite confusing as without this method the class Player's discard method
-    # won't return the result as expected.
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
@@ -57,14 +55,14 @@ class Card:
     # Card values ranking (highest to lowest): 2-A-K-Q-J-10-9...3
     def __gt__(self, other):
         if self.value == other.value:
-            return SUITS[self.suit].rank < SUITS[other.suit].rank  ## Test
+            return SUIT[self.suit].rank < SUIT[other.suit].rank  ## Test
         return CARD_RANKS.index(self.value) > CARD_RANKS.index(other.value)
 
     def show(self):
         if self.suit in ['Diamonds', 'Hearts']:
-            print(f'{Fore.RED}{SUITS[self.suit].uni} {Fore.RESET}{self.value}')
+            print(f'{Fore.RED}{SUIT[self.suit].uni} {Fore.RESET}{self.value}')
         else:
-            print(f'{Fore.BLACK}{Back.WHITE}{SUITS[self.suit].uni} {Back.RESET}{Fore.RESET}{self.value}')
+            print(f'{Fore.BLACK}{Back.WHITE}{SUIT[self.suit].uni} {Back.RESET}{Fore.RESET}{self.value}')
 
 
 class Deck:
@@ -78,7 +76,7 @@ class Deck:
 
     def build(self):
         self._cards = []
-        for suit in SUITS:
+        for suit in SUIT.keys():
             for value in CARD_RANKS:
                 self._cards.append(Card(suit, value))
         self._cards.sort(key=partial(card_func_key, suit_priority=True))
@@ -124,11 +122,15 @@ class Player:
             #print(f'{i+1:<2}', end=' ')
             card.show()
 
-    def discard(self, combotype, cards):
+    def play(self, combotype, cards):
         cards = sorted(cards, key=partial(card_func_key, valueby='rank'))
         for card in cards:
             self.hand.pop(self.hand.index(card))
         return self.Combination(combotype, cards)
+
+    def discard(self, card):
+        if card in self.hand:
+            self.hand.pop(self.hand.index(card))
 
     def sort_hand(self):
         self.hand.sort(key=card_func_key)
@@ -138,16 +140,15 @@ class Player:
 #   Sort cards by their value(by numerical or by rank) then suit rank by default.
 def card_func_key(card, valueby='numerical', suit_priority=False):
     if valueby == 'rank':
-        return (CARD_RANKS.index(card.value), -(SUITS[card.suit].rank))
+        return (CARD_RANKS.index(card.value), -(SUIT[card.suit].rank))
     else:
+        numerical = CARD_RANKS[11:] + CARD_RANKS[:11]
         if suit_priority:
             return (
-                -(SUITS[card.suit].rank),
-                int(card.value if card.value.isdigit() else HONOURS.get(card.value))
+                -(SUIT[card.suit].rank), numerical.index(card.value)
             )
         return (
-            int(card.value if card.value.isdigit() else HONOURS.get(card.value)),
-            -(SUITS[card.suit].rank)
+            numerical.index(card.value), -(SUIT[card.suit].rank)
         )
 
 
@@ -220,7 +221,7 @@ def is_straight_flush(cards):
 
 
 # Defining rules for comparing types of card combinations.
-def is_highest(current, former):
+def is_higher(current, former):
     if current.combotype == former.combotype:
         if former.combotype in ('Single',
                                 'Pair',
@@ -230,10 +231,10 @@ def is_highest(current, former):
                                 'Four of a kind'):
             return current.cards[-1] > former.cards[-1]
         elif former.combotype == 'Flush':
-            # Highest priority of comparison are the suits rather than values.
+            # Highest priority of comparison are the suit rather than values.
             if current.cards[-1].suit == former.cards[-1].suit:
                 return current.cards[-1] > former.cards[-1]
-            return SUITS[current.cards[-1].suit].rank < SUITS[former.cards[-1].suit].rank
+            return SUIT[current.cards[-1].suit].rank < SUIT[former.cards[-1].suit].rank
         elif former.combotype == 'Straight flush':
             pass
     else:
@@ -287,7 +288,7 @@ if __name__ == '__main__':
         card1
     ]
     # valid, combotype = verify_combination(sample_cards)
-    # plays.append(june.discard(combotype, sample_cards))
+    # plays.append(june.play(combotype, sample_cards))
 
     card3 = Card('Diamonds', '2')
     card4 = Card('Clubs', '2')
@@ -299,14 +300,14 @@ if __name__ == '__main__':
     pair2 = Player.Combination('Single', sample_cards2)
     # print(pair1 == pair2)
     # print(sample_cards1 == sample_cards2)
-    print(is_highest(pair1, pair2))
+    print(is_higher(pair1, pair2))
 
     # june.show_hand()
 
     # Sample play
     # card2 = Card('Hearts', '2')
-    # my_discard = [card2]
-    # valid, combotype = verify_combination(my_discard)
+    # my_discaard = [card2]
+    # valid, combotype = verify_combination(my_play)
     # print(card2 > card1)
 
     # while True:
@@ -331,8 +332,8 @@ if __name__ == '__main__':
 
     #                 suit, value = picked_card.split()
 
-    #                 if suit not in SUITS or \
-    #                         value not in (list(map(str, range(1, 11))) + list(HONOURS.values())):
+    #                 if suit not in SUIT.keys() or \
+    #                         value not in (list(map(str, range(1, 11))) + list(HONOUR.values())):
     #                     print(f"Wrong input.")
     #                     continue
 
@@ -360,7 +361,7 @@ if __name__ == '__main__':
     #                 #     print('Three of a kind combination battle.')
     #                 # else:
     #                 #     print('Five-card hand combination battle.')
-    #             plays.append(player.discard(combotype, picked_cards))
+    #             plays.append(player.play(combotype, picked_cards))
     #             pprint(plays)
     #             # player.show_hand()
     #         else:
