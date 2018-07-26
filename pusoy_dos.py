@@ -53,15 +53,14 @@ class Card:
     def __ne__(self, other):
         return not self.__dict__ == other.__dict__
 
-    # Reverse comparison of greater than and less than so comparison of card suits match
-    # the order of suit ranking where 1 would be the highest.
-    # Card values ranking(highest to lowest): 2-A-K-Q-J-10-9...3
+    # Suit ranking: lowest number is equivalent to highest ranking
+    # Card values ranking (highest to lowest): 2-A-K-Q-J-10-9...3
     def __gt__(self, other):
         if self.value == other.value:
             return SUITS[self.suit].rank < SUITS[other.suit].rank  ## Test
         return CARD_RANKS.index(self.value) > CARD_RANKS.index(other.value)
 
-    def show(self, end='\n'):
+    def show(self):
         if self.suit in ['Diamonds', 'Hearts']:
             print(f'{Fore.RED}{SUITS[self.suit].uni} {Fore.RESET}{self.value}')
         else:
@@ -78,10 +77,11 @@ class Deck:
         return len(self._cards)
 
     def build(self):
+        self._cards = []
         for suit in SUITS:
             for value in CARD_RANKS:
                 self._cards.append(Card(suit, value))
-        self._cards.sort(key=card_func_key)
+        self._cards.sort(key=partial(card_func_key, suit_priority=True))
 
     def shuffle(self):
         # Using Fisher-Yates modern shuffle algorithm
@@ -125,7 +125,7 @@ class Player:
             card.show()
 
     def discard(self, combotype, cards):
-        cards.sort(key=card_func_key)
+        cards = sorted(cards, key=partial(card_func_key, valueby='rank'))
         for card in cards:
             self.hand.pop(self.hand.index(card))
         return self.Combination(combotype, cards)
@@ -135,15 +135,20 @@ class Player:
 
 
 # Sorting key for cards:
-#   Values are converted to numerical equivalent by default
-#   Sort cards by their value(by numerical or by rank) then suit rank.
-def card_func_key(card, valueby='numerical'):
+#   Sort cards by their value(by numerical or by rank) then suit rank by default.
+def card_func_key(card, valueby='numerical', suit_priority=False):
     if valueby == 'rank':
         return (CARD_RANKS.index(card.value), -(SUITS[card.suit].rank))
-    return (
-        int(card.value if card.value.isdigit() else HONOURS.get(card.value)),
-        -(SUITS[card.suit].rank)
-    )
+    else:
+        if suit_priority:
+            return (
+                -(SUITS[card.suit].rank),
+                int(card.value if card.value.isdigit() else HONOURS.get(card.value))
+            )
+        return (
+            int(card.value if card.value.isdigit() else HONOURS.get(card.value)),
+            -(SUITS[card.suit].rank)
+        )
 
 
 # Check if cards' combination is valid
@@ -180,7 +185,7 @@ def is_three_of_a_kind(cards):
 
 
 def is_straight(cards):
-    cards.sort(key=card_func_key)
+    cards = sorted(cards, key=card_func_key)
     card_values = list(map(lambda c: c.value, cards))
     # If cards contains both King and Ace place the Ace at the end of card_values
     if 'King' in card_values and 'Ace' in card_values:
@@ -217,9 +222,19 @@ def is_straight_flush(cards):
 # Defining rules for comparing types of card combinations.
 def is_highest(current, former):
     if current.combotype == former.combotype:
-        if former.combotype in ('Single', 'Pair', 'Three of a kind'):
+        if former.combotype in ('Single',
+                                'Pair',
+                                'Three of a kind',
+                                'Straight',
+                                'Full house',
+                                'Four of a kind'):
             return current.cards[-1] > former.cards[-1]
         elif former.combotype == 'Flush':
+            # Highest priority of comparison are the suits rather than values.
+            if current.cards[-1].suit == former.cards[-1].suit:
+                return current.cards[-1] > former.cards[-1]
+            return SUITS[current.cards[-1].suit].rank < SUITS[former.cards[-1].suit].rank
+        elif former.combotype == 'Straight flush':
             pass
     else:
         print('Invalid type of combination played.')
@@ -272,7 +287,7 @@ if __name__ == '__main__':
         card1
     ]
     # valid, combotype = verify_combination(sample_cards)
-    # discard_pile.append(june.discard(combotype, sample_cards))
+    # plays.append(june.discard(combotype, sample_cards))
 
     card3 = Card('Diamonds', '2')
     card4 = Card('Clubs', '2')
@@ -331,21 +346,22 @@ if __name__ == '__main__':
     #             # except:
     #             #     print('Invalid input format.')
 
+    #         picked_cards = sorted(picked_cards, key=partial(card_func_key, valueby='rank'))
     #         valid, combotype = verify_combination(picked_cards)
     #         if valid:
-    #             if discard_pile:
-    #                 if discard_pile[-1].combotype == 'Single':
+    #             if plays:
+    #                 if plays[-1].combotype == 'Single':
     #                     print('Singles combination battle.')
-    #                     if picked_cards[0] > discard_pile[-1].cards[0]:
+    #                     if picked_cards[0] > plays[-1].cards[0]:
     #                         pass
-    #                 # elif discard_pile[-1][0] == 'Pair':
+    #                 # elif plays[-1][0] == 'Pair':
     #                 #     print('Pairs combination battle.')
-    #                 # elif discard_pile[-1][0] == 'Three of a kind':
+    #                 # elif plays[-1][0] == 'Three of a kind':
     #                 #     print('Three of a kind combination battle.')
     #                 # else:
     #                 #     print('Five-card hand combination battle.')
-    #             discard_pile.append(player.discard(combotype, picked_cards))
-    #             pprint(discard_pile)
+    #             plays.append(player.discard(combotype, picked_cards))
+    #             pprint(plays)
     #             # player.show_hand()
     #         else:
     #             print('No valid combination found. Try again.')
