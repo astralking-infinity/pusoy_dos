@@ -66,6 +66,7 @@ class Card:
 
 
 class Deck:
+    """A standard 52-card deck."""
 
     def __init__(self):
         self._cards = []
@@ -102,10 +103,12 @@ class Deck:
 
 class Player:
     Combination = namedtuple('Combination', ['combotype', 'cards'])
+    count = 0
 
     def __init__(self, name):
         self.name = name
         self.hand = []
+        self.count += 1
 
     def __eq__(self, other):
         return self.name == other.name
@@ -154,38 +157,35 @@ def card_func_key(card, valueby='numerical', suit_priority=False):
 
 # Check if cards' combination is valid
 def verify_combination(cards):
-    if len(cards) == 1:
-        return True, 'Single'
-    elif len(cards) == 2 and is_pair(cards):
-        return True, 'Pair'
-    elif len(cards) == 3 and is_three_of_a_kind(cards):
-        return True, 'Three of a kind'
-    elif len(cards) == 5 :
-        if is_straight_flush(cards):
-            return True, 'Straight flush'
-        elif is_straight(cards):
-            return True, 'Straight'
-        elif is_flush(cards):
-            return True, 'Flush'
-        elif is_full_house(cards):
-            return True, 'Full house'
-        elif is_four_of_a_kind(cards):
-            return True, 'Four of a kind'
-        else:
-            return False, None
-    else:
-        return False, None
+    for rule in (is_single,
+                 is_pair,
+                 is_three_of_a_kind,
+                 is_straight_flush,
+                 is_straight,
+                 is_flush,
+                 is_full_house,
+                 is_four_of_a_kind):
+        valid, name = rule(cards)
+        if valid:
+            return valid, name
+    return False, None
+
+
+def is_single(cards):
+    return len(cards) == 1, 'Single'
 
 
 def is_pair(cards):
-    return cards[0].value == cards[1].value
+    return len(cards) == 2 and cards[0].value == cards[1].value, 'Pair'
 
 
 def is_three_of_a_kind(cards):
-    return cards[0].value == cards[1].value == cards[2].value
+    return len(cards) == 3 and cards[0].value == cards[1].value == cards[2].value, 'Three of a kind'
 
 
 def is_straight(cards):
+    if len(cards) < 5:
+        return False
     cards = sorted(cards, key=card_func_key)
     card_values = list(map(lambda c: c.value, cards))
     # If cards contains both King and Ace place the Ace at the end of card_values
@@ -194,49 +194,63 @@ def is_straight(cards):
     possible_straight = ['Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
     for i in range( len(possible_straight)-4 ):
         if card_values == possible_straight[i:i+5]:
-            return True
-    return False
+            return True, 'Straight'
+    return False, 'Straight'
 
 
 def is_flush(cards):
-    return all(card.suit==cards[0].suit for card in cards)
+    return len(cards) == 5 and all(card.suit==cards[0].suit for card in cards), 'Flush'
 
 
 def is_full_house(cards):
+    if len(cards) < 5:
+        return False
     card_groups = {}
     for card in cards:
         card_groups.setdefault(card.value, []).append(card)
-    return [2, 3] == sorted(map(len, card_groups.values()))
+    return [2, 3] == sorted(map(len, card_groups.values())), 'Full house'
 
 
 def is_four_of_a_kind(cards):
+    if len(cards) < 5:
+        return False
     card_groups = {}
     for card in cards:
         card_groups.setdefault(card.value, []).append(card)
-    return [1, 4] == sorted(map(len, card_groups.values()))
+    return [1, 4] == sorted(map(len, card_groups.values())), 'Four of a kind'
 
 
 def is_straight_flush(cards):
-    return is_straight(cards) and is_flush(cards)
+    valid_straight, _ = is_straight(cards)
+    valid_flush, _ = is_flush(cards)
+    return len(cards) == 5 and valid_straight and valid_flush, 'Straight flush'
 
 
 # Defining rules for comparing types of card combinations.
 def is_higher(current, former):
+    five_card_group = { 'Straight': 1,
+                        'Flush': 2,
+                        'Full house': 3,
+                        'Four of a kind': 4,
+                        'Straight flush': 5, }
     if current.combotype == former.combotype:
         if former.combotype in ('Single',
                                 'Pair',
                                 'Three of a kind',
-                                'Straight',
                                 'Full house',
                                 'Four of a kind'):
             return current.cards[-1] > former.cards[-1]
         elif former.combotype == 'Flush':
-            # Highest priority of comparison are the suit rather than values.
+            # Highest priority of comparison are the suits rather than values.
             if current.cards[-1].suit == former.cards[-1].suit:
                 return current.cards[-1] > former.cards[-1]
             return SUIT[current.cards[-1].suit].rank < SUIT[former.cards[-1].suit].rank
+        elif former.combotype == 'Straight':
+            pass
         elif former.combotype == 'Straight flush':
             pass
+    elif all(len(cards) == 5 for cards in (current.cards, former.cards)):
+        return five_card_group[current.combotype] > five_card_group[former.combotype]
     else:
         print('Invalid type of combination played.')
         return False
