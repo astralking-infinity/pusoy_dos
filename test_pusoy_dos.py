@@ -117,98 +117,98 @@ class TestPusoyDos(unittest.TestCase):
         self.assertTrue(is_higher(triple1, triple2))
         self.assertFalse(is_higher(triple2, triple3))
 
-        # # Test straight flush type
-        # straight_flush1 = CardPlay('Straight Flush', [Card('Diamonds', '10'),
-        #                                                         Card('Diamonds', 'Jack'),
-        #                                                         Card('Diamonds', 'Queen'),
-        #                                                         Card('Diamonds', 'King'),
-        #                                                         Card('Diamonds', 'Ace')])
-        # straight_flush2 = CardPlay('Straight Flush', [Card('Spades', '6'),
-        #                                                         Card('Spades', '7'),
-        #                                                         Card('Spades', '8'),
-        #                                                         Card('Spades', '9'),
-        #                                                         Card('Spades', '10')])
-        # straight_flush3 = CardPlay('Straight Flush', [Card('Hearts', '6'),
-        #                                                         Card('Hearts', '7'),
-        #                                                         Card('Hearts', '8'),
-        #                                                         Card('Hearts', '9'),
-        #                                                         Card('Hearts', '10')])
-        # self.assertTrue(is_higher(straight_flush1, straight_flush2))
-        # self.assertFalse(is_higher(straight_flush2, straight_flush3))
+        # Test straight flush type
+        straight_flush1 = CardPlay('Straight Flush', [Card('Diamonds', '10'),
+                                                      Card('Diamonds', 'Jack'),
+                                                      Card('Diamonds', 'Queen'),
+                                                      Card('Diamonds', 'King'),
+                                                      Card('Diamonds', 'Ace')])
+        straight_flush2 = CardPlay('Straight Flush', [Card('Spades', '6'),
+                                                      Card('Spades', '7'),
+                                                      Card('Spades', '8'),
+                                                      Card('Spades', '9'),
+                                                      Card('Spades', '10')])
+        straight_flush3 = CardPlay('Straight Flush', [Card('Hearts', '6'),
+                                                      Card('Hearts', '7'),
+                                                      Card('Hearts', '8'),
+                                                      Card('Hearts', '9'),
+                                                      Card('Hearts', '10')])
+        self.assertTrue(is_higher(straight_flush1, straight_flush2))
+        self.assertFalse(is_higher(straight_flush2, straight_flush3))
 
-        # # Test straight type
-        # straight1 = CardPlay('Straight', [Card('Diamonds', '10'),
-        #                                             Card('Hearts', 'Jack'),
-        #                                             Card('Diamonds', 'Queen'),
-        #                                             Card('Spades', 'King'),
-        #                                             Card('Hearts', 'Ace')])
-        # straight2 = CardPlay('Straight', [Card('Spades', '6'),
-        #                                             Card('Hearts', '7'),
-        #                                             Card('Hearts', '8'),
-        #                                             Card('Diamonds', '9'),
-        #                                             Card('Spades', '10')])
-        # straight3 = CardPlay('Straight', [Card('Spades', '6'),
-        #                                             Card('Hearts', '7'),
-        #                                             Card('Diamonds', '8'),
-        #                                             Card('Diamonds', '9'),
-        #                                             Card('Hearts', '10')])
-        # self.assertTrue(is_higher(straight1, straight2))
-        # self.assertFalse(is_higher(straight2, straight3))
+        # Test straight type
+        straight1 = CardPlay('Straight', [Card('Diamonds', '10'),
+                                          Card('Hearts', 'Jack'),
+                                          Card('Diamonds', 'Queen'),
+                                          Card('Spades', 'King'),
+                                          Card('Hearts', 'Ace')])
+        straight2 = CardPlay('Straight', [Card('Spades', '10'),
+                                          Card('Hearts', 'Jack'),
+                                          Card('Hearts', 'Queen'),
+                                          Card('Diamonds', 'King'),
+                                          Card('Spades', 'Ace')])
+        straight3 = CardPlay('Straight', [Card('Spades', '3'),
+                                          Card('Hearts', '4'),
+                                          Card('Diamonds', '5'),
+                                          Card('Diamonds', 'Ace'),
+                                          Card('Hearts', '2')])
+        self.assertTrue(is_higher(straight1, straight2))
+        self.assertFalse(is_higher(straight2, straight3))
 
         # Test flush type
         flush1 = CardPlay('Flush', [Card('Diamonds', '3'),
-                                              Card('Diamonds', '6'),
-                                              Card('Diamonds', '7'),
-                                              Card('Diamonds', '9'),
-                                              Card('Diamonds', 'Ace')])
+                                    Card('Diamonds', '6'),
+                                    Card('Diamonds', '7'),
+                                    Card('Diamonds', '9'),
+                                    Card('Diamonds', 'Ace')])
         flush2 = CardPlay('Flush', [Card('Spades', '5'),
-                                              Card('Spades', '6'),
-                                              Card('Spades', '7'),
-                                              Card('Spades', '8'),
-                                              Card('Spades', 'Jack')])
+                                    Card('Spades', '6'),
+                                    Card('Spades', '7'),
+                                    Card('Spades', '8'),
+                                    Card('Spades', 'Jack')])
         flush3 = CardPlay('Flush', [Card('Hearts', '4'),
-                                              Card('Hearts', '5'),
-                                              Card('Hearts', '7'),
-                                              Card('Hearts', '8'),
-                                              Card('Hearts', 'King')])
+                                    Card('Hearts', '5'),
+                                    Card('Hearts', '7'),
+                                    Card('Hearts', '8'),
+                                    Card('Hearts', 'King')])
         self.assertTrue(is_higher(flush1, flush2))
         self.assertFalse(is_higher(flush2, flush3))
 
         # Test full house type
         full_house1 = CardPlay('Full house', [Card('Spades', '9'),
-                                                        Card('Diamonds', '9'),
-                                                        Card('Clubs', '2'),
-                                                        Card('Spades', '2'),
-                                                        Card('Hearts', '2')])
+                                              Card('Diamonds', '9'),
+                                              Card('Clubs', '2'),
+                                              Card('Spades', '2'),
+                                              Card('Hearts', '2')])
         full_house2 = CardPlay('Full house', [Card('Clubs', '8'),
-                                                      Card('Clubs', '5'),
-                                                      Card('Spades', '5'),
-                                                      Card('Hearts', '5'),
-                                                      Card('Diamonds', '5')])
+                                              Card('Clubs', '5'),
+                                              Card('Spades', '5'),
+                                              Card('Hearts', '5'),
+                                              Card('Diamonds', '5')])
         full_house3 = CardPlay('Full house', [Card('Hearts', '8'),
-                                                      Card('Clubs', 'Queen'),
-                                                      Card('Spades', 'Queen'),
-                                                      Card('Hearts', 'Queen'),
-                                                      Card('Diamonds', 'Queen')])
+                                              Card('Clubs', 'Queen'),
+                                              Card('Spades', 'Queen'),
+                                              Card('Hearts', 'Queen'),
+                                              Card('Diamonds', 'Queen')])
         self.assertTrue(is_higher(full_house1, full_house2))
         self.assertFalse(is_higher(full_house2, full_house3))
 
         # Test four of a kind type
         quad1 = CardPlay('Four of a kind', [Card('Diamonds', '6'),
-                                                      Card('Clubs', '2'),
-                                                      Card('Spades', '2'),
-                                                      Card('Hearts', '2'),
-                                                      Card('Diamonds', '2')])
+                                            Card('Clubs', '2'),
+                                            Card('Spades', '2'),
+                                            Card('Hearts', '2'),
+                                            Card('Diamonds', '2')])
         quad2 = CardPlay('Four of a kind', [Card('Clubs', '8'),
-                                                      Card('Clubs', '5'),
-                                                      Card('Spades', '5'),
-                                                      Card('Hearts', '5'),
-                                                      Card('Diamonds', '5')])
+                                            Card('Clubs', '5'),
+                                            Card('Spades', '5'),
+                                            Card('Hearts', '5'),
+                                            Card('Diamonds', '5')])
         quad3 = CardPlay('Four of a kind', [Card('Hearts', '8'),
-                                                      Card('Clubs', 'Queen'),
-                                                      Card('Spades', 'Queen'),
-                                                      Card('Hearts', 'Queen'),
-                                                      Card('Diamonds', 'Queen')])
+                                            Card('Clubs', 'Queen'),
+                                            Card('Spades', 'Queen'),
+                                            Card('Hearts', 'Queen'),
+                                            Card('Diamonds', 'Queen')])
         self.assertTrue(is_higher(quad1, quad2))
         self.assertFalse(is_higher(quad2, quad3))
 
