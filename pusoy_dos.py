@@ -101,8 +101,25 @@ class Deck:
             return True
 
 
+class CardPlay:
+    """Data class for cards played by the player."""
+
+    five_card_group = {'Straight': 1,
+                       'Flush': 2,
+                       'Full house': 3,
+                       'Four of a kind': 4,
+                       'Straight flush': 5}
+
+    def __init__(self, combotype, cards):
+        self.combotype = combotype
+        self.cards = cards
+        self.category = combotype.lower() if combotype not in self.five_card_group \
+                        else 'five-card'
+
+
 class Player:
-    Combination = namedtuple('Combination', ['combotype', 'cards'])
+    # Combination = namedtuple('Combination', ['combotype', 'cards'])
+    # Combination = CardPlay()
     count = 0
 
     def __init__(self, name):
@@ -129,7 +146,7 @@ class Player:
         cards = sorted(cards, key=partial(card_func_key, valueby='rank'))
         for card in cards:
             self.hand.pop(self.hand.index(card))
-        return self.Combination(combotype, cards)
+        return CardPlay(combotype, cards)
 
     def discard(self, card):
         if card in self.hand:
@@ -226,34 +243,29 @@ def is_straight_flush(cards):
     return len(cards) == 5 and valid_straight and valid_flush, 'Straight flush'
 
 
-# Defining rules for comparing types of card combinations.
-def is_higher(current, former):
-    five_card_group = { 'Straight': 1,
-                        'Flush': 2,
-                        'Full house': 3,
-                        'Four of a kind': 4,
-                        'Straight flush': 5, }
-    if current.combotype == former.combotype:
-        if former.combotype in ('Single',
-                                'Pair',
-                                'Three of a kind',
-                                'Full house',
-                                'Four of a kind'):
-            return current.cards[-1] > former.cards[-1]
-        elif former.combotype == 'Flush':
-            # Highest priority of comparison are the suits rather than values.
-            if current.cards[-1].suit == former.cards[-1].suit:
-                return current.cards[-1] > former.cards[-1]
-            return SUIT[current.cards[-1].suit].rank < SUIT[former.cards[-1].suit].rank
-        elif former.combotype == 'Straight':
-            pass
-        elif former.combotype == 'Straight flush':
-            pass
-    elif all(len(cards) == 5 for cards in (current.cards, former.cards)):
-        return five_card_group[current.combotype] > five_card_group[former.combotype]
-    else:
-        print('Invalid type of combination played.')
-        return False
+def is_higher(self, other):
+        """Check higher card combination based on category they belong."""
+        if self.category == other.category:
+            if self.category != 'five-card':
+                return self.cards[-1] > other.cards[-1]
+            else:
+                # Comparing to card combination with same type
+                if self.combotype == other.combotype:
+                    if self.combotype in ('Full house', 'Four of a kind'):
+                        return self.cards[-1] > other.cards[-1]
+                    elif self.combotype == 'Flush':
+                        if self.cards[-1].suit == other.cards[-1].suit:
+                            return self.cards[-1].value > other.cards[-1].value
+                        return self.cards[-1].suit < other.cards[-1].suit
+                    elif self.combotype == 'Straight':
+                        print('Not yet implemented.')
+                    elif self.combotype == 'Straight flush':
+                        print('Not yet implemented.')
+                else:
+                    return CardPlay.five_card_group[self.combotype] > CardPlay.five_card_group[other.combotype]
+        else:
+            print(f'{self.combotype} is not comparable to {other.combotype}.')
+            return False
 
 
 if __name__ == '__main__':
@@ -310,11 +322,11 @@ if __name__ == '__main__':
         card4
     ]
 
-    pair1 = Player.Combination('Pair', sample_cards1)
-    pair2 = Player.Combination('Single', sample_cards2)
+    # pair1 = Player.Combination('Pair', sample_cards1)
+    # pair2 = Player.Combination('Single', sample_cards2)
     # print(pair1 == pair2)
     # print(sample_cards1 == sample_cards2)
-    print(is_higher(pair1, pair2))
+    #print(is_higher(pair1, pair2))
 
     # june.show_hand()
 
