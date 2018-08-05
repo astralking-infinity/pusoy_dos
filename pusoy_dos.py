@@ -249,22 +249,22 @@ def is_higher(self, other):
             if self.category != 'five-card':
                 return self.cards[-1] > other.cards[-1]
             else:
-                # Comparing to card combination with same type
+                # Comparing two card combination with same type
                 if self.combotype == other.combotype:
-                    if self.combotype in ('Full house', 'Four of a kind'):
+                    if self.combotype in ('Full house', 'Four of a kind', 'Straight'):
                         return self.cards[-1] > other.cards[-1]
-                    elif self.combotype == 'Flush':
+                    else:  # self.combotype in ('Flush', 'Straight flush')
                         if self.cards[-1].suit == other.cards[-1].suit:
                             return self.cards[-1].value > other.cards[-1].value
                         return self.cards[-1].suit < other.cards[-1].suit
-                    elif self.combotype == 'Straight':
-                        print('Not yet implemented.')
-                    elif self.combotype == 'Straight flush':
-                        print('Not yet implemented.')
+                    # elif self.combotype == 'Straight':
+                    #     print('Not yet implemented.')
+                    # elif self.combotype == 'Straight flush':
+                    #     print('Not yet implemented.')
                 else:
                     return CardPlay.five_card_group[self.combotype] > CardPlay.five_card_group[other.combotype]
         else:
-            print(f'{self.combotype} is not comparable to {other.combotype}.')
+            print(f"Invalid match up.")
             return False
 
 
