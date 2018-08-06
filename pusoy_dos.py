@@ -23,13 +23,13 @@ spades = Suit('Spades', 3, b'\xE2\x99\xA0'.decode())
 clubs = Suit('Clubs', 4, b'\xE2\x99\xA3'.decode())
 
 SUIT = {'Diamonds': diamonds,
-         'Hearts': hearts,
-         'Spades': spades,
-         'Clubs': clubs}
+        'Hearts': hearts,
+        'Spades': spades,
+        'Clubs': clubs}
 
 CARD_RANKS = ('3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace', '2')
 
-discards = []
+# discards = []
 plays = []
 
 
@@ -58,11 +58,16 @@ class Card:
             return SUIT[self.suit].rank < SUIT[other.suit].rank  ## Test
         return CARD_RANKS.index(self.value) > CARD_RANKS.index(other.value)
 
-    def show(self):
+    def show(self, display=True):
         if self.suit in ['Diamonds', 'Hearts']:
-            print(f'{Fore.RED}{SUIT[self.suit].uni} {Fore.RESET}{self.value}')
+            fancy_display = f'{Fore.RED}{SUIT[self.suit].uni} {Fore.RESET}{self.value}'
         else:
-            print(f'{Fore.BLACK}{Back.WHITE}{SUIT[self.suit].uni} {Back.RESET}{Fore.RESET}{self.value}')
+            fancy_display = f'{Fore.BLACK}{Back.WHITE}{SUIT[self.suit].uni} {Back.RESET}{Fore.RESET}{self.value}'
+
+        if display:
+            print(fancy_display)
+        else:
+            return fancy_display
 
 
 class Deck:
@@ -116,6 +121,13 @@ class CardPlay:
         self.category = combotype.lower() if combotype not in self.five_card_group \
                         else 'five-card'
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.combotype!r}, {self.cards!r})'
+
+    def __str__(self):
+        cards_str = '-'.join(card.show(display=False) for card in self.cards)
+        return f'{self.combotype} of {cards_str}'
+
 
 class Player:
     # Combination = namedtuple('Combination', ['combotype', 'cards'])
@@ -125,7 +137,7 @@ class Player:
     def __init__(self, name):
         self.name = name
         self.hand = []
-        self.count += 1
+        Player.count += 1
 
     def __eq__(self, other):
         return self.name == other.name
@@ -142,11 +154,11 @@ class Player:
             #print(f'{i+1:<2}', end=' ')
             card.show()
 
-    def play(self, combotype, cards):
-        cards = sorted(cards, key=partial(card_func_key, valueby='rank'))
-        for card in cards:
+    def play(self, card_play):
+        # cards = sorted(cards, key=partial(card_func_key, valueby='rank'))
+        for card in card_play.cards:
             self.hand.pop(self.hand.index(card))
-        return CardPlay(combotype, cards)
+        return card_play
 
     def discard(self, card):
         if card in self.hand:
@@ -202,7 +214,7 @@ def is_three_of_a_kind(cards):
 
 def is_straight(cards):
     if len(cards) < 5:
-        return False
+        return False, 'Straight'
     cards = sorted(cards, key=card_func_key)
     card_values = list(map(lambda c: c.value, cards))
     # If cards contains both King and Ace place the Ace at the end of card_values
@@ -221,7 +233,7 @@ def is_flush(cards):
 
 def is_full_house(cards):
     if len(cards) < 5:
-        return False
+        return False, 'Full house'
     card_groups = {}
     for card in cards:
         card_groups.setdefault(card.value, []).append(card)
@@ -230,7 +242,7 @@ def is_full_house(cards):
 
 def is_four_of_a_kind(cards):
     if len(cards) < 5:
-        return False
+        return False, 'Four of a kind'
     card_groups = {}
     for card in cards:
         card_groups.setdefault(card.value, []).append(card)
@@ -249,7 +261,7 @@ def is_higher(self, other):
             if self.category != 'five-card':
                 return self.cards[-1] > other.cards[-1]
             else:
-                # Comparing two card combination with same type
+                # Comparing two five-card combination with same type
                 if self.combotype == other.combotype:
                     if self.combotype in ('Full house', 'Four of a kind', 'Straight'):
                         return self.cards[-1] > other.cards[-1]
@@ -257,14 +269,10 @@ def is_higher(self, other):
                         if self.cards[-1].suit == other.cards[-1].suit:
                             return self.cards[-1].value > other.cards[-1].value
                         return self.cards[-1].suit < other.cards[-1].suit
-                    # elif self.combotype == 'Straight':
-                    #     print('Not yet implemented.')
-                    # elif self.combotype == 'Straight flush':
-                    #     print('Not yet implemented.')
                 else:
                     return CardPlay.five_card_group[self.combotype] > CardPlay.five_card_group[other.combotype]
         else:
-            print(f"Invalid match up.")
+            # print(f"Invalid match up.")
             return False
 
 
@@ -290,6 +298,8 @@ if __name__ == '__main__':
     jess = Player('Jess')
     june = Player('June')
 
+    print('Number of players:', june.count)
+
     # players = [john, jane, jess, june]
     players = ActivePlayer(john, jane, jess, june)
 
@@ -297,98 +307,75 @@ if __name__ == '__main__':
     while deck.not_empty():
         players.next_turn().draw(deck)
 
-    player = players.next_turn()
-    print(player.name)
-    player.show_hand()
-    # for player in players:
-    #     print(f"{player}")
-    #     player.show_hand()
-    #     print()
+    next_turn = True
+    pass_ = False
+    first_turn = True
+    while True:
+        if next_turn:
+            player = players.next_turn()
+            print(f"{player.name}'s turn.")
+            player.sort_hand()
+            player.show_hand()
 
-    # june.sort_hand()
+        picked_cards = []
+        while True:
 
-    # Sample cards to test ranking of card combinations
-    card1 = Card('Hearts', '2')
-    card2 = Card('Spades', '2')
-    sample_cards1 = [
-        card1
-    ]
-    # valid, combotype = verify_combination(sample_cards)
-    # plays.append(june.play(combotype, sample_cards))
+            # try:
+                picked_card = input('Choose card to form a combination:(<suit> <value>): ').title()
+                if not picked_card:
+                    continue
 
-    card3 = Card('Diamonds', '2')
-    card4 = Card('Clubs', '2')
-    sample_cards2 = [
-        card4
-    ]
+                if picked_card == 'Quit' or picked_card == 'Q':
+                    # Optional exit status for faster bug fixing.
+                    sys.exit()
+                elif picked_card == 'Done' or picked_card == 'D':
+                    break
+                elif picked_card == 'Pass':
+                    if first_turn:
+                        print('First turn cannot pass.')
+                        continue
+                    pass_ = True
+                    break
 
-    # pair1 = Player.Combination('Pair', sample_cards1)
-    # pair2 = Player.Combination('Single', sample_cards2)
-    # print(pair1 == pair2)
-    # print(sample_cards1 == sample_cards2)
-    #print(is_higher(pair1, pair2))
+                suit, value = picked_card.split()
 
-    # june.show_hand()
+                if suit not in SUIT.keys() or value not in CARD_RANKS:
+                    print(f"Wrong input.")
+                    continue
 
-    # Sample play
-    # card2 = Card('Hearts', '2')
-    # my_discaard = [card2]
-    # valid, combotype = verify_combination(my_play)
-    # print(card2 > card1)
+                card = Card(suit, value)
+                if card not in player.hand:
+                    print(f"You don't have the card, {card}.")
+                elif card in picked_cards:
+                    print(f'{card} is already picked. Choose another one.')
+                else:
+                    picked_cards.append(card)
+            # except:
+            #     print('Invalid input format.')
 
-    # while True:
-    #     for player in players:
-    #         print(f"{player.name}'s turn.")
-    #         player.sort_hand()
-    #         player.show_hand()
+        if pass_:
+            next_turn = True
+            pass_ = False
+            continue
 
-    #         picked_cards = []
-    #         while True and len(picked_cards) < 5:
-
-    #             # try:
-    #                 picked_card = input('Choose card to form a combination:(<suit> <value>): ').title()
-    #                 if not picked_card:
-    #                     continue
-
-    #                 # Optional exit status for faster bug fixing.
-    #                 if picked_card == 'Quit' or picked_card == 'Q':
-    #                     sys.exit()
-    #                 elif picked_card == 'Done' or picked_card == 'D':
-    #                     break
-
-    #                 suit, value = picked_card.split()
-
-    #                 if suit not in SUIT.keys() or \
-    #                         value not in (list(map(str, range(1, 11))) + list(HONOUR.values())):
-    #                     print(f"Wrong input.")
-    #                     continue
-
-    #                 card = Card(suit, value)
-    #                 if card not in player.hand:
-    #                     print(f"You don't have the card, {card}")
-    #                 elif card in picked_cards:
-    #                     print(f'{card} is already picked. Choose another one.')
-    #                 else:
-    #                     picked_cards.append(card)
-    #             # except:
-    #             #     print('Invalid input format.')
-
-    #         picked_cards = sorted(picked_cards, key=partial(card_func_key, valueby='rank'))
-    #         valid, combotype = verify_combination(picked_cards)
-    #         if valid:
-    #             if plays:
-    #                 if plays[-1].combotype == 'Single':
-    #                     print('Singles combination battle.')
-    #                     if picked_cards[0] > plays[-1].cards[0]:
-    #                         pass
-    #                 # elif plays[-1][0] == 'Pair':
-    #                 #     print('Pairs combination battle.')
-    #                 # elif plays[-1][0] == 'Three of a kind':
-    #                 #     print('Three of a kind combination battle.')
-    #                 # else:
-    #                 #     print('Five-card hand combination battle.')
-    #             plays.append(player.play(combotype, picked_cards))
-    #             pprint(plays)
-    #             # player.show_hand()
-    #         else:
-    #             print('No valid combination found. Try again.')
+        # picked_cards = sorted(picked_cards, key=partial(card_func_key, valueby='rank'))
+        picked_cards.sort(key=partial(card_func_key, valueby='rank'))
+        valid, combotype = verify_combination(picked_cards)
+        if valid:
+            card_play = CardPlay(combotype, picked_cards)
+            if plays:
+                if is_higher(card_play, plays[-1]):
+                    plays.append(player.play(card_play))
+                    print('Card(s) to beat: ', card_play)
+                    next_turn = True
+                else:
+                    print('Wrong card(s). Choose another card(s) to play.')
+                    next_turn = False
+            else:
+                plays.append(player.play(card_play))
+                print('Card(s) to beat: ', card_play)
+                next_turn = True
+        else:
+            print('No valid combination found. Try again.')
+            next_turn = False
+        first_turn = False
