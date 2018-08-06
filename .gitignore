@@ -1,4 +1,2 @@
-measure_elapsed_time.py
-todo
-__pycache__/
-sort_list_of_objects.py
+__pycache__
+*.pyc
