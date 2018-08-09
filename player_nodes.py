@@ -144,8 +144,8 @@ class ActivePlayer:
 if __name__ == '__main__':
     from pusoy_dos import Player, Deck
 
-    """ Reference: Implementing an Unordered List: Linked Lists
-        http://interactivepython.org/courselib/static/pythonds/BasicDS/ImplementinganUnorderedListLinkedLists.html
+    """Reference: Implementing an Unordered List: Linked Lists
+    http://interactivepython.org/courselib/static/pythonds/BasicDS/ImplementinganUnorderedListLinkedLists.html
     """
 
     deck = Deck()

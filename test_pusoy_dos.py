@@ -147,9 +147,9 @@ class TestPusoyDos(unittest.TestCase):
                                           Card('Hearts', 'Queen'),
                                           Card('Diamonds', 'King'),
                                           Card('Spades', 'Ace')])
-        straight3 = CardPlay('Straight', [Card('Spades', '3'),
-                                          Card('Hearts', '4'),
-                                          Card('Diamonds', '5'),
+        straight3 = CardPlay('Straight', [Card('Spades', 'Jack'),
+                                          Card('Hearts', 'Queen'),
+                                          Card('Diamonds', 'King'),
                                           Card('Diamonds', 'Ace'),
                                           Card('Hearts', '2')])
         self.assertTrue(is_higher(straight1, straight2))

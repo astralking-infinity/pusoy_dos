@@ -230,14 +230,10 @@ def is_three_of_a_kind(cards):
 def is_straight(cards):
     if len(cards) < 5:
         return False, 'Straight'
-    cards = sorted(cards, key=card_func_key)
-    card_values = list(map(lambda c: c.value, cards))
-    # If cards contains both King and Ace place the Ace at the end of card_values
-    if 'King' in card_values and 'Ace' in card_values:
-        card_values = card_values[1:] + card_values[:1]
-    possible_straight = ['Ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace']
-    for i in range( len(possible_straight)-4 ):
-        if card_values == possible_straight[i:i+5]:
+    cards = sorted(cards, key=partial(card_func_key, valueby='rank'))
+    card_values = tuple(map(lambda c: c.value, cards))
+    for i in range( len(CARD_RANKS)-4 ):
+        if card_values == CARD_RANKS[i:i+5]:
             return True, 'Straight'
     return False, 'Straight'
 
