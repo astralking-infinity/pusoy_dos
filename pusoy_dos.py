@@ -6,15 +6,10 @@ Pusoy Dos or Filipino Poker
 """
 
 import math
-import sys
 from random import random
 from collections import namedtuple
 from functools import partial
-from pprint import pprint
-
 from colorama import Fore, Back
-
-from player_nodes import ActivePlayer
 
 Suit = namedtuple('Suit', ['name', 'rank', 'uni'])
 diamonds = Suit('Diamonds', 1, b'\xE2\x99\xA6'.decode())
@@ -28,9 +23,6 @@ SUIT = {'Diamonds': diamonds,
         'Clubs': clubs}
 
 CARD_RANKS = ('3', '4', '5', '6', '7', '8', '9', '10', 'Jack', 'Queen', 'King', 'Ace', '2')
-
-# discards = []
-plays = []
 
 
 class Card:
@@ -133,6 +125,7 @@ class Player:
     # Combination = namedtuple('Combination', ['combotype', 'cards'])
     # Combination = CardPlay()
     count = 0
+    lock = None
 
     def __init__(self, name):
         self.name = name
@@ -150,9 +143,11 @@ class Player:
             self.hand.append(deck.draw_card())
 
     def show_hand(self):
+        cards = []
         for i, card in enumerate(self.hand):
             #print(f'{i+1:<2}', end=' ')
-            card.show()
+            cards.append(card.show(display=False))
+        print('-'.join(cards))
 
     def play(self, card_play):
         # cards = sorted(cards, key=partial(card_func_key, valueby='rank'))
@@ -165,7 +160,13 @@ class Player:
             self.hand.pop(self.hand.index(card))
 
     def sort_hand(self):
-        self.hand.sort(key=card_func_key)
+        self.hand.sort(key=partial(card_func_key, valueby='rank'))
+
+    def card_count(self):
+        return len(self.hand)
+
+    def has_empty_hand(self):
+        return not self.hand
 
 
 # Sorting key for cards:
@@ -182,6 +183,20 @@ def card_func_key(card, valueby='numerical', suit_priority=False):
         return (
             numerical.index(card.value), -(SUIT[card.suit].rank)
         )
+
+
+# An extension of sorting key.
+#   Count number of frequency of an item
+def frequency_counter(card, group_cards=None, func=None, **kwargs):
+    return [len(group_cards[card.value])] + list(func(card, **kwargs))
+
+
+# Helper function for grouping cards according to value
+def group_value(cards):
+    value = {}
+    for card in cards:
+        value.setdefault(card.value, []).append(card)
+    return value
 
 
 # Check if cards' combination is valid
@@ -268,7 +283,7 @@ def is_higher(self, other):
                     else:  # self.combotype in ('Flush', 'Straight flush')
                         if self.cards[-1].suit == other.cards[-1].suit:
                             return self.cards[-1].value > other.cards[-1].value
-                        return self.cards[-1].suit < other.cards[-1].suit
+                        return SUIT[self.cards[-1].suit].rank < SUIT[other.cards[-1].suit].rank
                 else:
                     return CardPlay.five_card_group[self.combotype] > CardPlay.five_card_group[other.combotype]
         else:
@@ -290,92 +305,17 @@ if __name__ == '__main__':
     #   Four of a kind: 4 cards with equal value plus a single card of any value (Ranked by four cards used)
     #   Straight flush: 5 cards with consecutive values and same suit
 
+    from player_nodes import ActivePlayer
+
+    # Initialize deck
     deck = Deck()
     deck.shuffle()
 
+    # Prepare players
     john = Player('John')
     jane = Player('Jane')
     jess = Player('Jess')
     june = Player('June')
 
-    print('Number of players:', june.count)
-
     # players = [john, jane, jess, june]
     players = ActivePlayer(john, jane, jess, june)
-
-    # Distribute card for each player
-    while deck.not_empty():
-        players.next_turn().draw(deck)
-
-    next_turn = True
-    pass_ = False
-    first_turn = True
-    while True:
-        if next_turn:
-            player = players.next_turn()
-            print(f"{player.name}'s turn.")
-            player.sort_hand()
-            player.show_hand()
-
-        picked_cards = []
-        while True:
-
-            # try:
-                picked_card = input('Choose card to form a combination:(<suit> <value>): ').title()
-                if not picked_card:
-                    continue
-
-                if picked_card == 'Quit' or picked_card == 'Q':
-                    # Optional exit status for faster bug fixing.
-                    sys.exit()
-                elif picked_card == 'Done' or picked_card == 'D':
-                    break
-                elif picked_card == 'Pass':
-                    if first_turn:
-                        print('First turn cannot pass.')
-                        continue
-                    pass_ = True
-                    break
-
-                suit, value = picked_card.split()
-
-                if suit not in SUIT.keys() or value not in CARD_RANKS:
-                    print(f"Wrong input.")
-                    continue
-
-                card = Card(suit, value)
-                if card not in player.hand:
-                    print(f"You don't have the card, {card}.")
-                elif card in picked_cards:
-                    print(f'{card} is already picked. Choose another one.')
-                else:
-                    picked_cards.append(card)
-            # except:
-            #     print('Invalid input format.')
-
-        if pass_:
-            next_turn = True
-            pass_ = False
-            continue
-
-        # picked_cards = sorted(picked_cards, key=partial(card_func_key, valueby='rank'))
-        picked_cards.sort(key=partial(card_func_key, valueby='rank'))
-        valid, combotype = verify_combination(picked_cards)
-        if valid:
-            card_play = CardPlay(combotype, picked_cards)
-            if plays:
-                if is_higher(card_play, plays[-1]):
-                    plays.append(player.play(card_play))
-                    print('Card(s) to beat: ', card_play)
-                    next_turn = True
-                else:
-                    print('Wrong card(s). Choose another card(s) to play.')
-                    next_turn = False
-            else:
-                plays.append(player.play(card_play))
-                print('Card(s) to beat: ', card_play)
-                next_turn = True
-        else:
-            print('No valid combination found. Try again.')
-            next_turn = False
-        first_turn = False
