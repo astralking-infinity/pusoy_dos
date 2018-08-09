@@ -27,70 +27,80 @@ class Node:
 
 
 class ActivePlayer:
-    """ A class for managing list of players in a continuous cycle
-        or until winner has been decided.
-    """
+    """A class for managing list of players in a continuous cycle
+    or until winner has been decided."""
 
     def __init__(self, *players):
-        self.first = None
-        self.last = None
-        self.turn = None
-        self.size = 0
+        self._first = None
+        self._last = None
+        self._turn = None
+        self._size = 0
         self.set(*players)
 
     def __repr__(self):
-        current = self.first
+        current = self._first
         player_objs = []
-        for i in range(self.size()):
+        for i in range(self._size):
             player_objs.append(current.get_data())
             current = current.get_next()
         return f"{self.__class__.__name__}({', '.join(map(str, player_objs))})"
 
     def __str__(self):
-        current = self.first
+        current = self._first
         _players = []
-        for i in range(self.size):
+        for i in range(self._size):
             _players.append(f'Player {i+1}: {current.get_data().name}')
             current = current.get_next()
         return '\n'.join(_players)
 
-    # def __iter__(self):
-    #     return iter(self.next_turn())
+    def __iter__(self):
+        self._turn = None
+        return self
+
+    def __next__(self):
+        try:
+            if self._turn:
+                self._turn = self._turn.get_next()
+            else:
+                self._turn = self._first
+            return self._turn.get_data()
+        except:
+            raise StopIteration
 
     def set(self, *players):
         if players:
             for player in players:
                 node = Node(player)
-                if self.last:
-                    self.last.set_next(node)
+                if self._last:
+                    self._last.set_next(node)
                 else:
-                    self.first = node
-                self.last = node
-                self.size += 1
-            self.last.set_next(self.first)
+                    self._first = node
+                self._last = node
+                self._size += 1
+            # self._last.set_next(self._first)
 
     def add(self, player):
         node = Node(player)
-        self.last.set_next(node)
-        node.set_next(self.first)
-        self.last = node
-        self.size += 1
+        self._last.set_next(node)
+        node.set_next(self._first)
+        self._last = node
+        self._size += 1
 
     def next_turn(self):
-        if self.turn:
-            self.turn = self.turn.get_next()
+        if self._turn:
+            turn = self._turn.get_next()
+            self._turn = turn if turn else self._first
         else:
-            self.turn = self.first
-        return self.turn.get_data()
+            self._turn = self._first
+        return self._turn.get_data()
 
-    def upper_hand(self, player):
-        self.turn = self.search(player)
-        print(f'Advantage: {self.turn.get_data().name}')
-        return self.turn.get_data()
+    def assign_control(self, player):
+        self._turn = self.search(player)
+        return self._turn.get_data()
 
     def search(self, player):
         # Test the correctness of method
-        current = self.first
+        current = self._first
         found = False
         while not found:
             if current.get_data() == player:
@@ -102,31 +112,33 @@ class ActivePlayer:
     def remove(self, player):
         # Somehow needs to return a value indicating that a value has been
         # removed
-        current = self.first
+        current = self._first
         previous = None
         found = False
         while not found:
             if current.get_data() == player:
+                self._size -= 1
                 found = True
             else:
                 previous = current
                 current = current.get_next()
         if not previous:
-            self.first = current.get_next()
-            self.last.set_next(self.first)
+            self._first = current.get_next()
+            self._last.set_next(self._first)
         else:
-            if self.last == current:
-                self.last = previous
+            if self._last == current:
+                self._last = previous
             previous.set_next(current.get_next())
+        return found
 
     def get_size(self):
-        return self.size
+        return self._size
 
-    def _show_first(self):
-        print(self.first)
+    def get_first(self):
+        return self._first
 
-    def _show_last(self):
-        print(self.last)
+    def get_last(self):
+        return self._last
 
 
 if __name__ == '__main__':
@@ -146,7 +158,7 @@ if __name__ == '__main__':
     jack = Player('Jack')
 
     player_list = ActivePlayer(john, jane, jess, june)
-    # player_list.upper_hand(june)
+    # player_list.in_control(june)
     # player_list.remove(june)
     # print(player_list.next_turn())
     # print(player_list.next_turn())
@@ -155,7 +167,7 @@ if __name__ == '__main__':
     # print(player_list.next_turn())
     # print(player_list.next_turn())
     # player_list.show_first()
-    # print(player_list.size())
+    # print(player_list.get_size())
     player_list.add(jack)
     # player_list.show_players()
     print(player_list)
