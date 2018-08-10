@@ -1,9 +1,17 @@
+#!/usr/bin/python3.6
+
+"""pusoy_dos.py
+
+Pusoy Dos or Filipino Poker
+"""
+
 import sys
 from functools import partial
 from pprint import pprint
 
-from pusoy_dos import *
-from player_nodes import ActivePlayer
+import card
+from validation import verify_combination, is_higher
+from player import Player, ActivePlayer
 
 # Pusoy dos (Filipino Poker)
 # Rules:
@@ -19,7 +27,7 @@ from player_nodes import ActivePlayer
 #   Straight flush: 5 cards with consecutive values and same suit
 
 # Initialize deck
-deck = Deck()
+deck = card.Deck()
 deck.shuffle()
 
 # Prepare players
@@ -42,14 +50,9 @@ player_in_control = None
 
 # Determine the first turn by the player with the lowest card on hand
 for player in players:
-    if Card('Clubs', '3') in player.hand:
+    if card.Card('Clubs', '3') in player.hand:
         player_in_control = players.assign_control(player)
         break
-
-
-####### Implementing 'lock' system???????????????? #########
-# The idea is an instance will be locked until a 'key' has
-# been passed to another player.
 
 winners = []
 loser = None
@@ -61,8 +64,7 @@ next_turn = False
 pass_ = False
 pass_count = 0
 while players.get_size() > 1:
-    print('\nPass count:', pass_count)
-    print('Player size:', players.get_size(), 'Pass count:', pass_count)
+    print('\nPlayer size:', players.get_size(), 'Pass count:', pass_count)
     try:
         if pass_count == (players.get_size() - 1) or first_turn:
             if player_in_control not in players:
@@ -99,18 +101,18 @@ while players.get_size() > 1:
                 # Optional exit status for faster bug fixing.
                 sys.exit()
             elif picked_card == 'Done' or picked_card == 'D':
-                if first_turn and Card('Clubs', '3') not in picked_cards:
+                if first_turn and card.Card('Clubs', '3') not in picked_cards:
                     print('Please include 3 of clubs in play as a first turn. Try again.')
                     picked_cards = []
                     continue
-                group_cards = group_value(picked_cards)
-                picked_cards.sort(key=partial(frequency_counter,
+                group_cards = card.group_value(picked_cards)
+                picked_cards.sort(key=partial(card.frequency_counter,
                                               group_cards=group_cards,
-                                              func=card_func_key,
+                                              func=card.card_func_key,
                                               valueby='rank'))
                 valid, combotype = verify_combination(picked_cards)
                 if valid:
-                    card_play = CardPlay(combotype, picked_cards)
+                    card_play = card.CardPlay(combotype, picked_cards)
                     if not previous_move or player_in_control == player:
                         previous_move = player.play(card_play)
                         next_turn = True
@@ -148,14 +150,14 @@ while players.get_size() > 1:
             else:
                 suit, value = picked_card.split()
 
-                if suit not in SUIT.keys() or value not in CARD_RANKS:
+                if suit not in card.SUIT.keys() or value not in card.CARD_RANKS:
                     print(f"Wrong input.")
                     continue
 
-                card = Card(suit, value)
-                if card not in player.hand:
+                card_ = card.Card(suit, value)
+                if card_ not in player.hand:
                     print(f"You don't have the card, {card}.")
-                elif card in picked_cards:
+                elif card_ in picked_cards:
                     print(f'{card} is already picked. Choose another one.')
                 else:
                     picked_cards.append(card)
